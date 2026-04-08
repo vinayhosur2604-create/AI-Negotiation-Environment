@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Negotiation — OpenEnv</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a24;
+    --surface2: #1e2433;
+    --border: #2a3045;
+    --accent: #4ade80;
+    --accent2: #f59e0b;
+    --accent3: #60a5fa;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+  header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+  header .badge {
+    background: var(--accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 0;
+    height: calc(100vh - 73px);
+  }
+
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .main {
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 6px; }
+
+  select, input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .stat-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .stat-value.good { color: var(--accent); }
+  .stat-value.warn { color: var(--accent2); }
+  .stat-value.bad  { color: var(--danger); }
+
+  .progress-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  /* Action buttons */
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .action-btn {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .action-btn:hover:not(:disabled) { border-color: var(--accent3); color: var(--accent3); }
+  .action-btn.accept { border-color: var(--accent); color: var(--accent); }
+  .action-btn.accept:hover:not(:disabled) { background: rgba(74,222,128,0.1); }
+  .action-btn.reject { border-color: var(--danger); color: var(--danger); }
+  .action-btn.reject:hover:not(:disabled) { background: rgba(248,113,113,0.1); }
+  .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* History log */
+  .log {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .log-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 4px;
+    border-left: 3px solid var(--border);
+  }
+  .log-entry.pos { border-left-color: var(--accent); }
+  .log-entry.neg { border-left-color: var(--danger); }
+  .log-entry.neu { border-left-color: var(--accent3); }
+  .log-round { color: var(--muted); min-width: 24px; }
+  .log-move { flex: 1; }
+  .log-offer { color: var(--accent2); }
+  .log-reward {}
+
+  /* Score display */
+  .score-display {
+    text-align: center;
+    padding: 32px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .score-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 4rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .score-label { color: var(--muted); margin-top: 8px; font-size: 0.85rem; }
+
+  .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tag-easy   { background: rgba(74,222,128,0.15); color: var(--accent); }
+  .tag-medium { background: rgba(245,158,11,0.15); color: var(--accent2); }
+  .tag-hard   { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+  .zopa-vis {
+    position: relative;
+    height: 32px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .zopa-fill {
+    position: absolute;
+    height: 100%;
+    background: rgba(74,222,128,0.2);
+    border: 1px solid var(--accent);
+  }
+  .offer-marker {
+    position: absolute;
+    width: 3px;
+    height: 100%;
+    background: var(--accent2);
+    top: 0;
+    transition: left 0.3s ease;
+  }
+
+  #status-msg {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    min-height: 18px;
+  }
+
+  .counter-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .counter-row input { margin-bottom: 0; flex: 1; }
+  .counter-row button { white-space: nowrap; width: auto; padding: 10px 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AI Negotiation</h1>
+  <span class="badge">OpenEnv</span>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="card">
+      <div class="card-title">Setup</div>
+      <label>Task</label>
+      <select id="task-select">
+        <option value="easy_salary">easy_salary — Salary Negotiation</option>
+        <option value="medium_vendor">medium_vendor — Vendor Contract</option>
+        <option value="hard_acquisition">hard_acquisition — Company Acquisition</option>
+      </select>
+      <label>Seed (optional)</label>
+      <input type="number" id="seed-input" placeholder="random"/>
+      <button class="btn btn-primary" onclick="resetEnv()">▶ Start / Reset</button>
+    </div>
+
+    <div class="card" id="info-card" style="display:none">
+      <div class="card-title">Negotiation State</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">Buyer Budget</div>
+          <div class="stat-value good" id="buyer-budget">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Seller Floor</div>
+          <div class="stat-value bad" id="seller-min">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Current Offer</div>
+          <div class="stat-value warn" id="current-offer">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Round</div>
+          <div class="stat-value" id="round-num">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="stat-label" style="font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Progress to ZOPA</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="stat-label" style="font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">ZOPA Visualiser</div>
+        <div class="zopa-vis">
+          <div class="zopa-fill" id="zopa-fill"></div>
+          <div class="offer-marker" id="offer-marker"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- Actions -->
+    <div class="card">
+      <div class="card-title">Agent Actions</div>
+      <div class="action-grid">
+        <button class="action-btn" id="btn-is" onclick="doMove('increase_small')" disabled>↑ Increase Small (+5)</button>
+        <button class="action-btn" id="btn-il" onclick="doMove('increase_large')" disabled>↑↑ Increase Large (+15)</button>
+        <button class="action-btn" id="btn-ds" onclick="doMove('decrease_small')" disabled>↓ Decrease Small (−5)</button>
+        <button class="action-btn" id="btn-dl" onclick="doMove('decrease_large')" disabled>↓↓ Decrease Large (−15)</button>
+        <button class="action-btn accept" id="btn-accept" onclick="doMove('accept')" disabled>✓ Accept Deal</button>
+        <button class="action-btn reject" id="btn-reject" onclick="doMove('reject')" disabled>✗ Reject Deal</button>
+      </div>
+      <div class="counter-row">
+        <input type="number" id="counter-val" placeholder="Counter-propose value..." disabled/>
+        <button class="btn btn-secondary" id="btn-counter" onclick="doCounter()" disabled style="width:auto;padding:10px 16px">Propose</button>
+      </div>
+      <div id="status-msg">Start a session to begin negotiating.</div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <div class="card-title">Negotiation Log</div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="result-card" class="card" style="display:none">
+      <div class="card-title">Episode Result</div>
+      <div class="score-display">
+        <div class="score-num" id="final-score">—</div>
+        <div class="score-label" id="final-reason">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SESSION = "web_session_" + Math.random().toString(36).slice(2,8);
+let minVal = 0, maxVal = 200;
+
+async function api(path, method="GET", body=null) {
+  const opts = { method, headers: {"Content-Type":"application/json"} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+async function resetEnv() {
+  const task_id = document.getElementById("task-select").value;
+  const seedRaw = document.getElementById("seed-input").value;
+  const seed = seedRaw ? parseInt(seedRaw) : null;
+
+  document.getElementById("log").innerHTML = "";
+  document.getElementById("result-card").style.display = "none";
+  document.getElementById("status-msg").textContent = "Resetting...";
+
+  const data = await api("/reset", "POST", { task_id, seed, session_id: SESSION });
+  const obs = data.observation;
+
+  minVal = Math.min(obs.seller_min_price, obs.buyer_budget) - 20;
+  maxVal = Math.max(obs.seller_min_price, obs.buyer_budget) + 20;
+
+  updateUI(obs, null);
+  document.getElementById("info-card").style.display = "block";
+  setActionsEnabled(true);
+  document.getElementById("status-msg").textContent = `Session started. Task: ${task_id}`;
+}
+
+async function doMove(move) {
+  const data = await api("/step", "POST", { session_id: SESSION, move });
+  handleStepResult(data);
+}
+
+async function doCounter() {
+  const val = parseInt(document.getElementById("counter-val").value);
+  if (isNaN(val)) { alert("Enter a valid integer for counter-propose."); return; }
+  const data = await api("/step", "POST", { session_id: SESSION, move: "counter_propose", counter_value: val });
+  handleStepResult(data);
+}
+
+function handleStepResult(data) {
+  const obs = data.observation;
+  const reward = data.reward;
+  const done = data.done;
+
+  updateUI(obs, reward);
+  appendLog(obs, reward);
+
+  if (done) {
+    setActionsEnabled(false);
+    const score = data.episode_score ?? 0;
+    document.getElementById("final-score").textContent = score.toFixed(3);
+    const color = score >= 0.7 ? "var(--accent)" : score >= 0.4 ? "var(--accent2)" : "var(--danger)";
+    document.getElementById("final-score").style.color = color;
+    document.getElementById("final-reason").textContent = reward.reason;
+    document.getElementById("result-card").style.display = "block";
+    document.getElementById("status-msg").textContent = "Episode finished. Click Start/Reset to play again.";
+  } else {
+    document.getElementById("status-msg").textContent = `Round ${obs.round_number-1} complete. ${reward.reason}`;
+  }
+}
+
+function updateUI(obs, reward) {
+  document.getElementById("buyer-budget").textContent = obs.buyer_budget;
+  document.getElementById("seller-min").textContent = obs.seller_min_price;
+  document.getElementById("current-offer").textContent = obs.current_offer;
+  document.getElementById("round-num").textContent = `${obs.round_number} / ${obs.max_rounds}`;
+  document.getElementById("progress-fill").style.width = (obs.progress_ratio * 100) + "%";
+
+  // ZOPA visualiser
+  const range = maxVal - minVal;
+  const zopaLeft = ((obs.seller_min_price - minVal) / range * 100).toFixed(1);
+  const zopaW = ((obs.buyer_budget - obs.seller_min_price) / range * 100).toFixed(1);
+  const offerPos = ((obs.current_offer - minVal) / range * 100).toFixed(1);
+  document.getElementById("zopa-fill").style.left = Math.max(0,zopaLeft) + "%";
+  document.getElementById("zopa-fill").style.width = Math.max(0,zopaW) + "%";
+  document.getElementById("offer-marker").style.left = Math.min(98,Math.max(0,offerPos)) + "%";
+}
+
+function appendLog(obs, reward) {
+  const log = document.getElementById("log");
+  const cls = reward.value > 0.05 ? "pos" : reward.value < -0.05 ? "neg" : "neu";
+  const sign = reward.value >= 0 ? "+" : "";
+  const entry = document.createElement("div");
+  entry.className = `log-entry ${cls}`;
+  entry.innerHTML = `
+    <span class="log-round">${obs.round_number - 1}</span>
+    <span class="log-move">${obs.last_action ?? "—"}</span>
+    <span class="log-offer">$${obs.current_offer}</span>
+    <span class="log-reward">${sign}${reward.value.toFixed(3)}</span>
+  `;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function setActionsEnabled(en) {
+  ["btn-is","btn-il","btn-ds","btn-dl","btn-accept","btn-reject","btn-counter"].forEach(id => {
+    document.getElementById(id).disabled = !en;
+  });
+  document.getElementById("counter-val").disabled = !en;
+}
+</script>
+</body>
+</html>
