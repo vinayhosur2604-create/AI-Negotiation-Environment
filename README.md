@@ -1,16 +1,4 @@
----
-title: AI Negotiation OpenEnv
-emoji: 🤝
-colorFrom: green
-colorTo: blue
-sdk: docker
-pinned: false
-tags:
-  - openenv
-  - negotiation
-  - reinforcement-learning
-  - real-world
----
+
 
 # 🤝 AI Negotiation — OpenEnv Environment
 
