@@ -1,0 +1,68 @@
+name: AI Negotiation Environment
+version: "1.0.0"
+author: vinayhosur2604
+description: >
+  A real-world negotiation simulation where an AI agent must reach
+  price agreements through offer/counter-offer dialogues.
+  Models salary negotiation, vendor contracts, and company acquisitions.
+
+tags:
+  - negotiation
+  - real-world
+  - business
+  - openenv
+
+tasks:
+  - id: easy_salary
+    description: Negotiate a starting salary. Wide ZOPA, generous rounds.
+    difficulty: easy
+    max_rounds: 15
+    expected_score: 0.85
+
+  - id: medium_vendor
+    description: Negotiate a vendor contract. Narrow ZOPA, moderate rounds.
+    difficulty: medium
+    max_rounds: 10
+    expected_score: 0.60
+
+  - id: hard_acquisition
+    description: Company acquisition negotiation. Very narrow ZOPA, few rounds.
+    difficulty: hard
+    max_rounds: 6
+    expected_score: 0.35
+
+action_space:
+  type: discrete
+  moves:
+    - increase_small
+    - increase_large
+    - decrease_small
+    - decrease_large
+    - accept
+    - reject
+    - counter_propose
+
+observation_space:
+  buyer_budget: integer
+  seller_min_price: integer
+  current_offer: integer
+  round_number: integer
+  max_rounds: integer
+  last_action: string | null
+  negotiation_zone: "overlap | no_overlap"
+  progress_ratio: float  # 0.0 – 1.0
+  task_id: string
+
+reward_range: [-1.0, 1.0]
+
+endpoints:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state/{session_id}
+  validate: GET /validate
+  tasks: GET /tasks
+
+docker:
+  base_image: python:3.11-slim
+  port: 7860
+  start_command: uvicorn app:app --host 0.0.0.0 --port 7860
