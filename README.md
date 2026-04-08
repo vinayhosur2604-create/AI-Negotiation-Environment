@@ -20,6 +20,22 @@ This project simulates a negotiation between a buyer and seller using a custom r
 1. Install Python
 2. Run the file:
    python negotiation.py
+ 
+## Action Space
+- increase
+- decrease
+- accept
+- reject
+
+## Observation Space
+- buyer_budget
+- seller_price
+- offer
+
+## Tasks
+- Easy
+- Medium
+- Hard
 
 ## 🎯 Goal
 To demonstrate how AI can model human-like negotiation behavior using reinforcement learning concepts.
