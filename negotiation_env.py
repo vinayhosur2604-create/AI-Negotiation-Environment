@@ -1,9 +1,3 @@
-"""
-AI Negotiation OpenEnv Environment
-Real-world salary / price negotiation simulation
-Compliant with OpenEnv spec: step() / reset() / state()
-"""
-
 import random
 import time
 from dataclasses import dataclass, asdict
